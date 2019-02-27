@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/sha256.min.js"></script>
+    <title>Blockchain</title>
+</head>
+<body>
+    <label>Nguoi gui: </label><input type="text" id="From" /><br><br>
+    <label>Nguoi nhan: </label><input type="text" id="To"><br><br>
+    <label>So tien: </label><input type="number" id="Money"> $<br><br>
+    <input type="submit" onclick="AddTrade()" value="Giao dich">
+    <p>****************************</p>
+    <label>Nguoi dao:</label><input type="text" id="ND" >
+    <input type="submit" onclick="Mine()" value="Dao block">
+
+    <div style="width:100%;height:1px;background:black;margin-top: 20px;"></div>
+    <h3>Mang giao dich tam hoan</h3>
+    <pre id="GDTH"></pre>
+    <p>--------------------------------</p>
+    <h3>Chuoi block chain</h3>
+    <pre id="Data-Block"></pre>
+    
+    
+    
+    <script>
+        //Class Giao dich
+        class Giaodich{
+            constructor(NguoiGui, NguoiNhan, SoTien){
+                this.From = NguoiGui;
+                this.To = NguoiNhan;
+                this.Money = SoTien;
+            }
+        }
+
+        // Class block
+        class Block {
+            constructor(CreateDay, Data, HashB = ''){
+                this.CreateDay = CreateDay;
+                this.Data = Data;
+                this.HashB = HashB;
+                this.Hash = this.CalculateHash();
+                this.AutoValue = 0;
+            }
+            CalculateHash(){
+                return CryptoJS.SHA256(this.CreateDay + JSON.stringify(this.Data) + this.HashB + this.AutoValue).toString();
+            }
+            BlockMine(Difficult){
+                var d = "";
+                for(let i = 0;i<Difficult;i++){
+                    d+="0";
+                }
+                while(this.Hash.substring(0,Difficult) != d){ 
+                    this.AutoValue++;
+                    this.Hash = this.CalculateHash();
+                    console.log(this.AutoValue + ": " + this.Hash + "\n");
+                }
+                console.log("Done: " + this.Hash);
+            }
+        }
+        // Mang Blockchain
+        class Blockchain{
+            constructor(){
+                this.ArrBlock = [];
+                this.ArrBlock.push(new Block('25/2/2019','Genesis Block','0')); // Block bat dau
+                this.Difficult = 4;
+                this.DelayTrade = [];
+                this.Reward = 100;
+            }
+            GetLastBlock(){
+                return this.ArrBlock[this.ArrBlock.length - 1];
+            }
+
+            BlockMining(NguoiNhan){
+                let block = new Block(new Date, this.DelayTrade, this.GetLastBlock().Hash);
+                block.BlockMine(this.Difficult);
+                this.ArrBlock.push(block);
+                this.DelayTrade = [new Giaodich(null,NguoiNhan,"100C")];
+            }
+            VerifyBlockChain(){
+                for(let i=1;i<this.ArrBlock.length;i++){
+                    const CurrentBlock = this.ArrBlock[i];
+                    const PrevBlock = this.ArrBlock[i-1];
+                    if(CurrentBlock.Hash !== CurrentBlock.CalculateHash()){
+                        return false;
+                    }
+                    if(CurrentBlock.HashB != PrevBlock.Hash){
+                        return false;
+                    }
+                    
+                }
+                return true;
+            }
+        }
+
+
+        // Test code
+        var Coin = new Blockchain();
+
+        
+
+        // Coin.BlockMining('hello');
+        // Coin.BlockMining('a');
+
+        // // Coin.ArrBlock[1].CreateDay = "abcxyz";
+
+        // alert(Coin.VerifyBlockChain());
+
+        document.getElementById('Data-Block').innerHTML = JSON.stringify(Coin,null,2);
+
+        document.getElementById('GDTH').innerHTML = JSON.stringify(Coin.DelayTrade,null,2);
+
+        var AddTrade = function(){
+            Coin.DelayTrade.push(new Giaodich(document.getElementById('From').value,document.getElementById('To').value,document.getElementById('Money').value + "$"));
+            document.getElementById('GDTH').innerHTML = JSON.stringify(Coin.DelayTrade,null,2);
+            document.getElementById('From').value = "";
+            document.getElementById('To').value = "";
+            document.getElementById('Money').value = null;
+        }
+        var Mine = function(){
+            var NguoiDao = document.getElementById('ND').value;
+            Coin.BlockMining(NguoiDao);
+            document.getElementById('Data-Block').innerHTML = JSON.stringify(Coin,null,2);
+            document.getElementById('GDTH').innerHTML = JSON.stringify(Coin.DelayTrade,null,2);
+            document.getElementById('ND').value = "";
+        }
+
+        </script>
+</body>
+</html>
